@@ -1,8 +1,6 @@
 # Command Pattern Concept
 
 Command pattern concept based on refactoring.guru and designpatterns solutions.
-[refactoring.guru](https://refactoring.guru/es/design-patterns/command/php/example)
-[designpatternsphp](https://designpatternsphp.readthedocs.io/en/latest/Behavioral/Command/README.html)
 ## Description
 
 Command pattern concept.
