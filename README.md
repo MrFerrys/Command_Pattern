@@ -40,7 +40,7 @@ Command pattern concept.
 ```
     $invoker        =   new Invoker();
     $receiver       =   new SimpleCommand('Hello worlddd');
-	$complexCommand =   new ComplexCommand($receiver,'PARAM_AA','PARAM_BB');
+    $complexCommand =   new ComplexCommand($receiver,'PARAM_AA','PARAM_BB');
     $invoker->setCommand(new ComplexCommand($complexCommand,'PARAM_A','PARAM_B',false));
     $invoker->run();
 ```

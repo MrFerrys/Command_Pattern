@@ -1,0 +1,21 @@
+{
+    "name": "mrferrys/command_pattern",
+    "description": "Command pattern concept based on refactoring.guru and designpatterns solutions.",
+    "type": "library",
+    "require": {
+      "php": ">=5.3.0"
+    },
+    "license": "MiT",
+    "authors": [
+      {
+        "name": "Ferrys",
+        "email": "mymail@mail.com"
+      }
+    ],
+    "minimum-stability": "dev",
+    "autoload": {
+        "psr-4": {
+          "CommandPattern\\": "lib/"
+        }
+    }
+  }

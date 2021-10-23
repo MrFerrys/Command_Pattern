@@ -1,4 +1,5 @@
 <?php
+namespace CommandPattern;
 /**
  * Command pattern concept based on refactoring.guru and designpatterns solutions.
  * 
@@ -36,9 +37,17 @@ interface Command
 	 */
 	public function getId();
 	/**
+	 * Sets the command id.
+	 */
+	public function setId();
+	/**
 	 * Returns the current command status.
 	 */
 	public function getStatus();
+	/**
+	 * Sets the command status.
+	 */
+	public function setStatus($status);
 }
 
 /**
@@ -123,6 +132,7 @@ class SimpleCommand extends Receiver implements Command
 		$this->id			=	-1;
 		$this->status		=	CMD_STATUS_CREATED;
 		$this->invokerId	=	-1;
+		$this->setId();
     }
  
 	/**
@@ -163,10 +173,24 @@ class SimpleCommand extends Receiver implements Command
 		return $this->id;
 	}
 	/**
+	 * Returns the id.
+	 */
+	public function setId(){
+		
+		$this->id = md5(base64_encode(serialize($this)));
+		echo "ID: ".$this->id."\r\n";
+	}
+	/**
 	 * Returns the current command status.
 	 */
 	public function getStatus(){
 		return $this->status;
+	}
+	/**
+	 * Sets the command status.
+	 */
+	public function setStatus($status){
+		$this->status=$status;
 	}
 	/**
 	 * Returns the invoker id.
@@ -233,6 +257,7 @@ class ComplexCommand extends Receiver implements Command
 		$this->id			=	-1;
 		$this->status		=	CMD_STATUS_CREATED;
 		$this->invokerId	=	-1;
+		$this->setId();
     }
 
     /**
@@ -245,10 +270,12 @@ class ComplexCommand extends Receiver implements Command
 		if($this->await === true)
 		{
 			echo "aWait call \r\n";
+			$this->receiver->setInvokerId($this->id);
 			$this->receiver->doAction($this->a,$this->b);
 			$this->status	=	CMD_STATUS_TERMINATED;
 		}else{
 			echo "aSync call \r\n";
+			$this->receiver->setInvokerId($this->id);
 			$this->receiver->doActionAsync($this->a,$this->b);
 		}
 		
@@ -286,11 +313,26 @@ class ComplexCommand extends Receiver implements Command
 	}
 
 	/**
+	 * Returns the id.
+	 */
+	public function setId(){
+		
+		$this->id = md5(base64_encode(serialize($this)));
+		echo "ID: ".$this->id."\r\n";
+	}
+
+	/**
 	 * Returns the current command status.
 	 */
 	public function getStatus()
 	{
 		return $this->status;
+	}
+	/**
+	 * Sets the command status.
+	 */
+	public function setStatus($status){
+		$this->status=$status;
 	}
 	/**
 	 * Returns the invoker id.

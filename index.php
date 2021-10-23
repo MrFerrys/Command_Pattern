@@ -11,6 +11,10 @@ error_reporting(E_ALL);
 
 //LIBS
 require_once(dirname(__FILE__).'/lib/cmdlib.php');
+use CommandPattern\Invoker as Invoker;
+use CommandPattern\ComplexCommand as ComplexCommand;
+use CommandPattern\SimpleCommand as SimpleCommand;
+
 
 /**
  *  MAIN
@@ -25,13 +29,13 @@ try{
 	echo "---------------- COMPLEX + SIMPLE CMD \r\n";
     $invoker = new Invoker();
     $receiver = new SimpleCommand('Hello world');
-    $invoker->setCommand(new ComplexCommand($receiver,"Param_A","Param_B"));
+    $invoker->setCommand(new ComplexCommand($receiver,"Param_A","Param_B",false));
     $invoker->run();
 
 	echo "---------------- NESTED COMPLEX CMD \r\n";
 	$invoker        =   new Invoker();
-    $receiver       =   new SimpleCommand('Hello worlddd');
-	$complexCommand =   new ComplexCommand($receiver,'PARAM_AA','PARAM_BB');
+    $receiver       =   new SimpleCommand('Hello world');
+	$complexCommand =   new ComplexCommand($receiver,'PARAM_AA','PARAM_BB',false);
     $invoker->setCommand(new ComplexCommand($complexCommand,'PARAM_A','PARAM_B',false));
     $invoker->run();
 }catch(\Exception $e){
