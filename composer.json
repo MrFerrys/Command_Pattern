@@ -14,8 +14,6 @@
     ],
     "minimum-stability": "dev",
     "autoload": {
-        "psr-4": {
-          "CommandPattern\\": "lib/"
-        }
+      "classmap": ["src/*", "lib/*", "cmdlib.php"]
     }
   }
