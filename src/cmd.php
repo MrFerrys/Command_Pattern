@@ -7,10 +7,20 @@ namespace CommandPattern;
  * https://refactoring.guru/es/design-patterns/command/php/example
  * https://designpatternsphp.readthedocs.io/en/latest/Behavioral/Command/README.html
  * 
- * @version 1.0.0
+ * @version 1.1.0
  * @author  Ferrys
  * 
  */
+/**
+ * Verbosity level.
+ * 
+ */
+define("VERBOSE_QUIET"			,-1);//QUIET
+define("VERBOSE_NORMAL"			,0);//NORMAL
+//define("VERBOSE_LVL_1"			,1);//ALL INFO MESSAGES INCLUDING ERR.
+define("VERBOSE_LVL_2"			,2);//ERR MESSAGES
+define("VERBOSE_DEBUG"			,3);//ALL MESSAGES
+
 /**
  * DEFINEs; Command statuses
  */
@@ -33,13 +43,17 @@ interface Command
 	 */
     public function execute();
 	/**
+	 * Calculates the command id.
+	 */
+	public function calculateId();
+	/**
 	 * Returns the command id.
 	 */
 	public function getId();
 	/**
 	 * Sets the command id.
 	 */
-	public function setId();
+	public function setId($id);
 	/**
 	 * Returns the current command status.
 	 */
@@ -48,6 +62,39 @@ interface Command
 	 * Sets the command status.
 	 */
 	public function setStatus($status);
+	/**
+	 * Sets the verbose level.
+	 */
+	public function setVerboseLevel($level);
+	/**
+	 * Sets starting time.
+	 * i.e. startingTime    =   microtime(true);
+	 */
+	public function setStartingTime($time);
+	/**
+	 * Sets ending time.
+	 * i.e. endingTime    =   microtime(true);
+	 */
+	public function setEndingTime($time);
+	/**
+	 * Calculates exec time in secs
+	 * 
+	 */
+	public function getExecutionTime();
+	/**
+	 * Sets the progression in %
+	 */
+	public function setProgress($amount);
+	/**
+	 * Gets the progression in %
+	 */
+	public function getProgress();
+	/**
+	 * Prints the output depending on verbosity level.
+	 * message is the message to print.
+	 * level is the verbosity's level of the message.
+	 */
+	public function printOutput($message,$msgLevel);
 }
 
 /**
@@ -55,12 +102,10 @@ interface Command
  */
 abstract class Receiver
 {
-
 	/**
 	 * aWaiting call; It waits til the action is terminated.
 	 */
 	abstract public function doAction();
-
 	/**
 	 * aSync call; Delegates the action to the command line system.
 	 */
@@ -87,7 +132,6 @@ abstract class Receiver
         }
 		pclose(popen($command,'w'));
 	}
-
 	/**
 	 * Gets the invoker id. 
 	 * Invoker in that case is the command that is calling this receiver
@@ -102,6 +146,7 @@ abstract class Receiver
 
 /**
  * Some commands can implement simple operations on their own.
+ * It works as command and Receiver.
  */
 class SimpleCommand extends Receiver implements Command 
 {
@@ -115,13 +160,29 @@ class SimpleCommand extends Receiver implements Command
 	private $id;
 	/**
 	 * @var status stores the command status (1=>created,2=>ready,3=>running,4=>blocked,5=>terminated,6=>waiting,7=>stopped,8=>paused,9=>error)
-	 *  
 	 */
 	private $status;
 	/**
 	 * @var invokerId stores the invoker id
 	 */
 	private $invokerId;
+	/**
+	 * @var verboseLevel stores the verbose level
+	 */
+	private $verboseLevel;
+	/**
+	 * @var startingTime stores the time when command has started
+	 */
+	private $startingTime;
+	/**
+	 * @var endingTime stores the time when command has finished
+	 */
+	private $endingTime;
+	/**
+	 * @var progression stores the command progression.
+	 */
+	private $progression;
+
  
 	/**
      * Simple commands can accept one or several params via the constructor.
@@ -130,21 +191,20 @@ class SimpleCommand extends Receiver implements Command
     {
         $this->param 		= 	$param;
 		$this->id			=	-1;
-		$this->status		=	CMD_STATUS_CREATED;
 		$this->invokerId	=	-1;
-		$this->setId();
+		$this->progression  =   0;
+		$this->status		=	CMD_STATUS_CREATED;
+		$this->verboseLevel =	VERBOSE_QUIET;
     }
- 
 	/**
 	 * executes the command
 	 */
     public function execute()
     {
 		$this->status		=	CMD_STATUS_RUNNING;
-        echo "SimpleCommand: See, I can do simple things like printing (" . $this->param . ")\n";
+		$this->printOutput("SimpleCommand: See, I can do simple things like printing (" . $this->param . ")\r\n",VERBOSE_NORMAL);
 		$this->status		=	CMD_STATUS_TERMINATED;
     }
-
 	/**
 	 * aWaiting call
 	 */
@@ -155,7 +215,6 @@ class SimpleCommand extends Receiver implements Command
 		$this->status	=	CMD_STATUS_READY;
 		$this->execute();
 	}
-
 	/**
 	 * aSync call
 	 */
@@ -167,6 +226,13 @@ class SimpleCommand extends Receiver implements Command
 		$this->execInCmdLine($this);
 	}
 	/**
+	 * Calculates the id.
+	 */
+	public function calculateId()
+	{
+		return md5(base64_encode(serialize($this)));
+	}
+	/**
 	 * Returns the id.
 	 */
 	public function getId(){
@@ -175,10 +241,9 @@ class SimpleCommand extends Receiver implements Command
 	/**
 	 * Returns the id.
 	 */
-	public function setId(){
-		
-		$this->id = md5(base64_encode(serialize($this)));
-		echo "ID: ".$this->id."\r\n";
+	public function setId($id)
+	{
+		$this->id = $id;
 	}
 	/**
 	 * Returns the current command status.
@@ -204,11 +269,84 @@ class SimpleCommand extends Receiver implements Command
 	public function setInvokerId($id){
 		return $this->invokerId;
 	}
+	/**
+	 * Sets the verbose level.
+	 */
+	public function setVerboseLevel($level)
+	{
+		$this->verboseLevel = $level;
+	}
+	/**
+	 * Sets starting time.
+	 * i.e. startingTime    =   microtime(true);
+	 */
+	public function setStartingTime($time)
+	{
+		$this->startingTime=$time;
+	}
+	/**
+	 * Sets ending time.
+	 * i.e. endingTime    =   microtime(true);
+	 */
+	public function setEndingTime($time)
+	{
+		$this->endingTime = $time;
+	}
+	/**
+	 * Calculates exec time in secs
+	 */
+	public function getExecutionTime()
+	{
+        $diff           =   (float)$this->endingTime-(float)$this->startingTime;
+        $executionTime  =   $diff;
+        /*if($minutes ==  true && abs($executionTime) > 0)
+        {
+            $executionTime = $executionTime/60;
+        }*/
+        return round($executionTime,2);
+	}
+	/**
+	 * Sets the progression in %
+	 */
+	public function getProgress()
+	{
+		return $this->progression;
+	}
+	/**
+	 * Gets the progression in %
+	 */
+	public function setProgress($amount)
+	{
+		$this->progression=$amount;
+	}
+	/**
+	 * Prints the output depending on verbosity level.
+	 */
+	public function printOutput($message,$msgLevel)
+	{
+		/*
+		//BEHAVIOUR 1
+		if($this->verboseLevel == VERBOSE_QUIET){return;}
+		if(	$this->verboseLevel  == VERBOSE_DEBUG 	|| 
+			$this->verboseLevel  == $level 			|| 
+			($this->verboseLevel == VERBOSE_LVL_1 && ($level==VERBOSE_NORMAL || $level==VERBOSE_LVL_2)) 
+		)
+		{
+			echo $message;
+		}*/
+		//BEHAVIOUR 2
+		if($this->verboseLevel >= $msgLevel)
+		{
+			echo $message;
+		}
+
+	}
 }
 
 /**
  * Commands can delegate more complex operations to other objects(Receivers).
  * Any class could serve as a Receiver.
+ * It works as commandHandler and Receiver
  */
 class ComplexCommand extends Receiver implements Command
 {
@@ -216,17 +354,14 @@ class ComplexCommand extends Receiver implements Command
      * @var Receiver
      */
     private $receiver;
-	
 	/**
      * @var Await flag
      */
     private $await;
-
     /**
      * @var a param
      */
     private $a;
-
 	/**
 	 * @var b param
 	 */
@@ -243,6 +378,22 @@ class ComplexCommand extends Receiver implements Command
 	 * @var invokerId stores the invoker id
 	 */
 	private $invokerId;
+	/**
+	 * @var verboseLevel stores the verbose level
+	 */
+	private $verboseLevel;
+	/**
+	 * @var startingTime stores the time when command has started
+	 */
+	private $startingTime;
+	/**
+	 * @var endingTime stores the time when command has finished
+	 */
+	private $endingTime;
+	/**
+	 * @var progression stores the command progression.
+	 */
+	private $progression;
 
     /**
      * Complex commands can accept one or several receiver objects along with
@@ -255,30 +406,29 @@ class ComplexCommand extends Receiver implements Command
         $this->a 			= 	$a;
         $this->b 			=	$b;
 		$this->id			=	-1;
-		$this->status		=	CMD_STATUS_CREATED;
 		$this->invokerId	=	-1;
-		$this->setId();
+		$this->progression  =   0;
+		$this->status		=	CMD_STATUS_CREATED;
+		$this->verboseLevel =	VERBOSE_QUIET;
     }
-
     /**
      * Commands can delegate to any methods of a receiver.
      */
     public function execute()
     {
 		$this->status		=	CMD_STATUS_RUNNING;
-		echo "ComplexCommand: Complex stuff should be done by a receiver object.\r\n";
+		$this->printOutput("ComplexCommand: Complex stuff should be done by a receiver object.\r\n",VERBOSE_NORMAL);
 		if($this->await === true)
 		{
-			echo "aWait call \r\n";
+			$this->printOutput( "aWait call \r\n",VERBOSE_DEBUG);
 			$this->receiver->setInvokerId($this->id);
 			$this->receiver->doAction($this->a,$this->b);
 			$this->status	=	CMD_STATUS_TERMINATED;
 		}else{
-			echo "aSync call \r\n";
+			$this->printOutput( "aSync call \r\n",VERBOSE_DEBUG);
 			$this->receiver->setInvokerId($this->id);
 			$this->receiver->doActionAsync($this->a,$this->b);
 		}
-		
     }
 	/**
 	 * aWaiting call
@@ -291,7 +441,6 @@ class ComplexCommand extends Receiver implements Command
 		$this->status	=	CMD_STATUS_READY;
 		$this->execute();
 	}
-
 	/**
 	 * aSync call
 	 */
@@ -303,24 +452,25 @@ class ComplexCommand extends Receiver implements Command
 		$this->status	=	CMD_STATUS_READY;
 		$this->execInCmdLine($this);
 	}
-
 	/**
-	 * Returns the id value
+	 * Calculates the id.
 	 */
-	public function getId()
-	{
-		return $this->id;
+	public function calculateId(){
+		return md5(base64_encode(serialize($this)));
 	}
-
 	/**
 	 * Returns the id.
 	 */
-	public function setId(){
-		
-		$this->id = md5(base64_encode(serialize($this)));
-		echo "ID: ".$this->id."\r\n";
+	public function getId(){
+		return $this->id;
 	}
-
+	/**
+	 * Gets the id.
+	 */
+	public function setId($id)
+	{
+		$this->id = $id;
+	}
 	/**
 	 * Returns the current command status.
 	 */
@@ -343,13 +493,75 @@ class ComplexCommand extends Receiver implements Command
 	/**
 	 * Sets the invoker id.
 	 */
-	public function setInvokerId($id){
+	public function setInvokerId($id)
+	{
 		$this->invokerId=$id;
+	}
+	/**
+	 * Sets the verbose level.
+	 */
+	public function setVerboseLevel($level)
+	{
+		$this->verboseLevel=$level;
+	}
+	/**
+	 * Sets starting time.
+	 * i.e. startingTime    =   microtime(true);
+	 */
+	public function setStartingTime($time)
+	{
+		$this->startingTime=$time;
+	}
+	/**
+	 * Sets ending time.
+	 * i.e. endingTime    =   microtime(true);
+	 */
+	public function setEndingTime($time)
+	{
+		$this->endingTime = $time;
+	}
+	/**
+	 * Calculates exec time in secs
+	 */
+	public function getExecutionTime()
+	{
+        $diff           =   (float)$this->endingTime-(float)$this->startingTime;
+        $executionTime  =   $diff;
+        /*if($minutes ==  true && abs($executionTime) > 0)
+        {
+            $executionTime = $executionTime/60;
+        }*/
+        return round($executionTime,2);
+	}
+	/**
+	 * Sets the progression in %
+	 */
+	public function getProgress()
+	{
+		return $this->progression;
+	}
+	/**
+	 * Gets the progression in %
+	 */
+	public function setProgress($amount)
+	{
+		$this->progression=$amount;
+	}
+	/**
+	 * Prints the output depending on verbosity level.
+	 */
+	public function printOutput($message,$msgLevel)
+	{
+		if($this->verboseLevel >= $msgLevel)
+		{
+			echo $message;
+		}
 	}
 }
 
 /**
  * Invoker executes the given command.
+ * commandInvoker
  */
 class Invoker
 {
@@ -357,6 +569,10 @@ class Invoker
 	 * @var command
 	 */
     private $command;
+	/**
+	 * @var verboseLevel stores the verbose level
+	 */
+	private $verboseLevel;
 
     /**
      * in the invoker we find this kind of method for subscribing the command
@@ -365,16 +581,32 @@ class Invoker
     public function setCommand(Command $cmd)
     {
         $this->command = $cmd;
-		echo "##########STATUS-> ".$this->command->getStatus()."\r\n";
+		if(!empty($this->verboseLevel))
+		{
+			$this->command->setVerboseLevel($this->verboseLevel);
+		}
+		//$this->command->setVerboseLevel($this->verboseLevel);
     }
-
     /**
      * executes the command; the invoker is the same whatever is the command
      */
     public function run()
     {
         $this->command->execute();
-		echo "##########STATUS-> ".$this->command->getStatus()."\r\n";
     }
+	/**
+	 * Sets the verbose level.
+	 */
+	public function setVerboseLevel($level)
+	{
+		$this->verboseLevel = $level;
+	}
+	/**
+	 * returns the verbose level.
+	 */
+	public function getVerboseLevel()
+	{
+		return $this->verboseLevel;
+	}
 }
 ?>

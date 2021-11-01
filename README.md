@@ -53,6 +53,10 @@ Ferrys
 
 * 1.0.0
     * Initial Release (X.Y.Z MAJOR.MINOR.PATCH)
+* 1.1.0
+    * Verbosity level added
+    * Folder name has changed from lib to src
+    * lib name has changed from cmdlib to cmd
 
 ## License
 

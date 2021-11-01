@@ -3,17 +3,17 @@
     "description": "Command pattern concept based on refactoring.guru and designpatterns solutions.",
     "type": "library",
     "require": {
-      "php": ">=5.3.0"
+      "php": ">=5.0.0"
     },
     "license": "MiT",
     "authors": [
       {
         "name": "Ferrys",
-        "email": "mail@mail.com"
+        "email": "mymail@mail.com"
       }
     ],
     "minimum-stability": "dev",
     "autoload": {
-      "classmap": ["lib/"]
+      "classmap": ["src/"]
     }
   }
